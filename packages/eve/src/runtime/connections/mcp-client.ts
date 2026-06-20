@@ -264,6 +264,10 @@ export function isMcpAuthRequiredError(error: unknown): boolean {
  */
 function isMcpHttpFallbackRetryableError(error: unknown): boolean {
   const status = readHttpStatus(error);
+  // Some MCP servers keep the HTTP transport's inbound SSE body open long
+  // enough for undici to raise a body timeout before the server emits any
+  // event. Treat that the same as an HTTP transport incompatibility and
+  // retry with the legacy SSE transport instead of failing the connection.
   return status === 400 || status === 404 || status === 405 || isUndiciBodyTimeoutError(error);
 }
 
