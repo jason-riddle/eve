@@ -264,7 +264,27 @@ export function isMcpAuthRequiredError(error: unknown): boolean {
  */
 function isMcpHttpFallbackRetryableError(error: unknown): boolean {
   const status = readHttpStatus(error);
-  return status === 400 || status === 404 || status === 405;
+  return status === 400 || status === 404 || status === 405 || isUndiciBodyTimeoutError(error);
+}
+
+function isUndiciBodyTimeoutError(error: unknown): boolean {
+  let sawBodyTimeoutMarker = false;
+
+  for (const candidate of walkErrorChain(error)) {
+    if (!isObject(candidate)) {
+      continue;
+    }
+
+    if (candidate.code === 'UND_ERR_BODY_TIMEOUT') {
+      sawBodyTimeoutMarker = true;
+    }
+
+    if (candidate.name === 'BodyTimeoutError') {
+      sawBodyTimeoutMarker = true;
+    }
+  }
+
+  return sawBodyTimeoutMarker;
 }
 
 function readHttpStatus(error: unknown): number | undefined {
